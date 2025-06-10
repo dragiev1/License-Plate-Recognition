@@ -1,10 +1,15 @@
 import numpy as np
 from skimage.transform import resize
 from skimage import measure
+from skimage.filters import threshold_otsu
 from skimage.measure import regionprops
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import ccaRetouch
+
+def inverted_threshold(grayscale_image):
+    threshold_value = threshold_otsu(grayscale_image)
+    return grayscale_image < threshold_value
 
 def is_valid_region(region_height, region_width, min_width, max_width, min_height, max_height):
     return (
@@ -12,9 +17,19 @@ def is_valid_region(region_height, region_width, min_width, max_width, min_heigh
         min_height < region_height < max_height
     )
 
-# TODO: Fix hardcoded licenseplate here.
-license_plate = np.invert(ccaRetouch.plate_like_objects[2])
-# print("Unique values in license_plate: ", np.unique(license_plate))
+for plate in ccaRetouch.plate_like_objects:
+    height, width = plate.shape
+    plate = inverted_threshold(plate)
+    license_plate = []
+    highest_average = 0
+    total_white_pixels = 0
+    for column in range(width):
+        total_white_pixels = np.sum(plate)
+    average = total_white_pixels / plate.shape[0]
+    if average > highest_average:
+        highest_average = average
+        license_plate = plate
+
 labeled_plate = measure.label(license_plate)
 
 fig, ax1 = plt.subplots(1)
